@@ -1,5 +1,5 @@
 import { App, Notice, PluginSettingTab, Setting } from "obsidian";
-import MyPlugin from "./main";
+import ImmichSyncPlugin from "./main";
 
 export interface ImmichSyncSettings {
 	serverUrl: string;
@@ -18,9 +18,9 @@ export const DEFAULT_SETTINGS: ImmichSyncSettings = {
 };
 
 export class ImmichSyncSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+	plugin: ImmichSyncPlugin;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: ImmichSyncPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -30,7 +30,7 @@ export class ImmichSyncSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName("Immich Server URL")
+			.setName("Immich server URL")
 			.setDesc(
 				"Base URL of your Immich instance, including /api (e.g. https://immich.example.com/api)."
 			)
@@ -46,7 +46,7 @@ export class ImmichSyncSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Immich API Key")
+			.setName("Immich API key")
 			.setDesc(
 				"Stored in this plugin's data.json on disk in plain text. Needs asset.read, asset.download, and asset.view permissions. See https://api.immich.app/getting-started"
 			)
@@ -62,7 +62,7 @@ export class ImmichSyncSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName("Cache Images Locally")
+			.setName("Cache images locally")
 			.setDesc(
 				"Store fetched images on disk so notes render offline and faster without re-fetching."
 			)
@@ -76,7 +76,7 @@ export class ImmichSyncSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Full Resolution")
+			.setName("Full resolution")
 			.setDesc(
 				"Fetch the original asset instead of a thumbnail. Uses much more bandwidth and disk."
 			)
@@ -90,7 +90,7 @@ export class ImmichSyncSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Max Cache Size (MB)")
+			.setName("Max cache size (MB)")
 			.setDesc(
 				"Oldest accessed images are evicted when the cache exceeds this size."
 			)
@@ -111,7 +111,7 @@ export class ImmichSyncSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName("Clear Cache")
+			.setName("Clear cache")
 			.setDesc(
 				"Delete all locally cached images. Hash-to-asset-id mappings are preserved."
 			)
@@ -121,7 +121,7 @@ export class ImmichSyncSettingTab extends PluginSettingTab {
 					.setWarning()
 					.onClick(async () => {
 						await this.plugin.clearCache();
-						new Notice("Immich Sync cache cleared");
+						new Notice("Immich cache cleared");
 					})
 			);
 	}

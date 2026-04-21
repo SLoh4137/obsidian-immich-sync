@@ -1,10 +1,10 @@
 import { Editor, Notice, arrayBufferToBase64 } from "obsidian";
-import MyPlugin from "../main";
+import ImmichSyncPlugin from "../main";
 import { CODEBLOCK_LANG } from "../types";
 import { pickImages } from "./picker";
 
 export async function uploadImagesToImmich(
-	plugin: MyPlugin,
+	plugin: ImmichSyncPlugin,
 	editor: Editor,
 ): Promise<void> {
 	const files = await pickImages();

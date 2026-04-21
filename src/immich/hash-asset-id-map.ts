@@ -1,11 +1,11 @@
-import MyPlugin from "../main";
+import ImmichSyncPlugin from "../main";
 
 export type SerializedHashAssetIdMap = Record<string, string>;
 
 export class HashAssetIdMap {
 	private map = new Map<string, string>();
 
-	constructor(private plugin: MyPlugin) {}
+	constructor(private plugin: ImmichSyncPlugin) {}
 
 	hydrate(data: SerializedHashAssetIdMap | undefined): void {
 		this.map = new Map(Object.entries(data ?? {}));

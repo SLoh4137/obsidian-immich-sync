@@ -22,6 +22,18 @@ export default tseslint.config(
 		},
 	},
 	...obsidianmd.configs.recommended,
+	{
+		plugins: { obsidianmd },
+		rules: {
+			"obsidianmd/ui/sentence-case": [
+				"error",
+				{
+					brands: ["Immich"],
+					acronyms: ["MB", "URL", "API"],
+				},
+			],
+		},
+	},
 	globalIgnores([
 		"node_modules",
 		"dist",

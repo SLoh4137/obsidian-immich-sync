@@ -1,7 +1,7 @@
-import MyPlugin from "../main";
+import ImmichSyncPlugin from "../main";
 import { CODEBLOCK_LANG } from "../types";
 
-export function registerCodeblockProcessor(plugin: MyPlugin): void {
+export function registerCodeblockProcessor(plugin: ImmichSyncPlugin): void {
 	plugin.registerMarkdownCodeBlockProcessor(CODEBLOCK_LANG, async (source, el) => {
 		const hashes = source
 			.split("\n")
@@ -15,7 +15,7 @@ export function registerCodeblockProcessor(plugin: MyPlugin): void {
 	});
 }
 
-async function renderHash(plugin: MyPlugin, container: HTMLElement, hash: string): Promise<void> {
+async function renderHash(plugin: ImmichSyncPlugin, container: HTMLElement, hash: string): Promise<void> {
 	try {
 		const src = await resolveImageSrc(plugin, hash);
 		if (src === null) {
@@ -31,7 +31,7 @@ async function renderHash(plugin: MyPlugin, container: HTMLElement, hash: string
 	}
 }
 
-async function resolveImageSrc(plugin: MyPlugin, hash: string): Promise<string | null> {
+async function resolveImageSrc(plugin: ImmichSyncPlugin, hash: string): Promise<string | null> {
 	if (plugin.settings.enableLocalCache) {
 		const cachedPath = await plugin.cache.get(hash);
 		if (cachedPath !== null) {
@@ -53,7 +53,7 @@ async function resolveImageSrc(plugin: MyPlugin, hash: string): Promise<string |
 	return plugin.client.directUrl(assetId, plugin.settings.fullResolution);
 }
 
-async function resolveAssetId(plugin: MyPlugin, hash: string): Promise<string | null> {
+async function resolveAssetId(plugin: ImmichSyncPlugin, hash: string): Promise<string | null> {
 	const cached = plugin.hashMap.get(hash);
 	if (cached !== undefined) {
 		return cached;

@@ -6,10 +6,10 @@ import {
 	searchAssets,
 	viewAsset,
 } from "@immich/sdk";
-import MyPlugin from "../main";
+import ImmichSyncPlugin from "../main";
 
 export class ImmichClient {
-	constructor(private plugin: MyPlugin) {}
+	constructor(private plugin: ImmichSyncPlugin) {}
 
 	reinit(): void {
 		init({

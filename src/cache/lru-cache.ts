@@ -1,5 +1,5 @@
 import { normalizePath } from "obsidian";
-import MyPlugin from "../main";
+import ImmichSyncPlugin from "../main";
 
 interface CacheEntry {
 	hash: string;
@@ -16,7 +16,7 @@ export class LruCache {
 	private entries: CacheEntry[] = [];
 	private dirEnsured = false;
 
-	constructor(private plugin: MyPlugin) {}
+	constructor(private plugin: ImmichSyncPlugin) {}
 
 	hydrate(data: SerializedCacheIndex | undefined): void {
 		this.entries = (data ?? []).slice().sort((a, b) => a.lastAccessMs - b.lastAccessMs);
