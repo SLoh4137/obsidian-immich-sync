@@ -1,10 +1,14 @@
 import {App, Editor, MarkdownView, Modal, Notice, Plugin} from 'obsidian';
-import {DEFAULT_SETTINGS, MyPluginSettings, SampleSettingTab} from "./settings";
+import {DEFAULT_SETTINGS, ImmichSyncSettings, ImmichSyncSettingTab} from "./settings";
 
 // Remember to rename these classes and interfaces!
 
 export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+	settings: ImmichSyncSettings;
+
+	async clearCache(): Promise<void> {
+		// Implemented in step 4 (LRU cache).
+	}
 
 	async onload() {
 		await this.loadSettings();
@@ -57,7 +61,7 @@ export default class MyPlugin extends Plugin {
 		});
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+		this.addSettingTab(new ImmichSyncSettingTab(this.app, this));
 
 		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
 		// Using this function will automatically remove the event listener when this plugin is disabled.
@@ -74,7 +78,7 @@ export default class MyPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData() as Partial<MyPluginSettings>);
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData() as Partial<ImmichSyncSettings>);
 	}
 
 	async saveSettings() {
