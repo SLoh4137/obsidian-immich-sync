@@ -1,10 +1,12 @@
 import {App, Editor, MarkdownView, Modal, Notice, Plugin} from 'obsidian';
 import {DEFAULT_SETTINGS, ImmichSyncSettings, ImmichSyncSettingTab} from "./settings";
 import {HashAssetIdMap, SerializedHashAssetIdMap} from "./immich/hash-asset-id-map";
+import {LruCache, SerializedCacheIndex} from "./cache/lru-cache";
 
 interface PersistedPluginData {
 	settings: ImmichSyncSettings;
 	hashToAssetId: SerializedHashAssetIdMap;
+	cacheIndex: SerializedCacheIndex;
 }
 
 // Remember to rename these classes and interfaces!
@@ -12,9 +14,10 @@ interface PersistedPluginData {
 export default class MyPlugin extends Plugin {
 	settings: ImmichSyncSettings;
 	hashMap: HashAssetIdMap = new HashAssetIdMap(this);
+	cache: LruCache = new LruCache(this);
 
 	async clearCache(): Promise<void> {
-		// Implemented in step 4 (LRU cache).
+		await this.cache.clear();
 	}
 
 	async onload() {
@@ -88,6 +91,7 @@ export default class MyPlugin extends Plugin {
 		const data = (await this.loadData()) as Partial<PersistedPluginData> | null;
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, data?.settings ?? {});
 		this.hashMap.hydrate(data?.hashToAssetId);
+		this.cache.hydrate(data?.cacheIndex);
 	}
 
 	async saveSettings() {
@@ -98,6 +102,7 @@ export default class MyPlugin extends Plugin {
 		const data: PersistedPluginData = {
 			settings: this.settings,
 			hashToAssetId: this.hashMap.toJSON(),
+			cacheIndex: this.cache.toJSON(),
 		};
 		await this.saveData(data);
 	}
