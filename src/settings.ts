@@ -41,6 +41,7 @@ export class ImmichSyncSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.serverUrl = value.trim();
 						await this.plugin.saveSettings();
+						this.plugin.client.reinit();
 					})
 			);
 
@@ -56,6 +57,7 @@ export class ImmichSyncSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.apiKey = value.trim();
 						await this.plugin.saveSettings();
+						this.plugin.client.reinit();
 					});
 			});
 
