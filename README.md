@@ -1,90 +1,99 @@
-# Obsidian Sample Plugin
+# Obsidian Immich Sync
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+Keep your vault tiny. This plugin replaces image embeds with the Immich checksum of each image and renders them at view time by fetching from your Immich server, with optional local LRU caching for offline reading.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+## How it works
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open modal (simple)" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+-   **Upload**: pick images from your OS file dialog. The plugin computes each image's SHA-1 (Base64-encoded — the same algorithm Immich uses for `checksum`) and inserts a single fenced codeblock at the cursor:
+    ````md
+    ```immich-sync
+    <hash1>
+    <hash2>
+    ```
+    ````
+    No image bytes go into the vault. The plugin assumes you've also uploaded the same images to Immich (e.g., via the mobile auto-backup); rendering will look them up by checksum.
+-   **Render**: when an `immich-sync` codeblock is shown, each hash is resolved to an Immich asset ID (cached in `data.json` after first lookup) and either pulled from disk cache or fetched from Immich. Cache misses populate the cache for next time.
 
-## First time developing plugins?
+## Installation
 
-Quick starting guide for new plugin devs:
+This plugin is not yet on the community catalog. To install manually:
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+1. Build:
+    ```bash
+    npm install
+    npm run build
+    ```
+2. Copy `main.js`, `manifest.json`, and `styles.css` into `<YourVault>/.obsidian/plugins/obsidian-immich-sync/`.
+3. Reload Obsidian and enable the plugin in **Settings → Community plugins**.
 
-## Releasing new releases
+## Settings
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+-   **Immich server URL** — must include `/api` (e.g. `https://immich.example.com/api`).
+-   **Immich API key** — stored in this plugin's `data.json` on disk in plain text. Needs `asset.read`, `asset.download`, and `asset.view` permissions.
+-   **Cache images locally** — keep fetched images on disk so notes render offline. Cached files live at `<vault>/.obsidian/plugins/obsidian-immich-sync/cache/`. Default: on.
+-   **Full resolution** — fetch originals instead of thumbnails. Uses much more bandwidth and disk. Default: off.
+-   **Max cache size (MB)** — oldest accessed images are evicted when this is exceeded. Default: 50.
+-   **Clear cache** — deletes all cached files. The hash → asset ID map is preserved so you don't have to re-search Immich.
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+## Uploading images
 
-## Adding your plugin to the community plugin list
+Three entry points, all open the OS file picker (multi-select):
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+-   Right-click in the editor → **Upload images to Immich**
+-   Command palette → **Upload images to Immich**
+-   Ribbon icon (image-up icon)
 
-## How to use
+The ribbon and command-palette flows insert into the currently-active note.
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+## CORS configuration (Nginx Proxy Manager)
 
-## Manually installing the plugin
+Obsidian's web origin is `app://obsidian.md`. Immich servers fronted by NPM will reject the plugin's `fetch()` calls (preflight + POST to `/api/search/metadata`) unless CORS is explicitly allowed. Direct `<img src>` loads are not affected — only the SDK calls used for asset lookup and cache population.
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+In your Immich proxy host:
 
-## Improve code quality with eslint
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- This project already has eslint preconfigured, you can invoke a check by running`npm run lint`
-- Together with a custom eslint [plugin](https://github.com/obsidianmd/eslint-plugin) for Obsidan specific code guidelines.
-- A GitHub action is preconfigured to automatically lint every commit on all branches.
+1. **Custom locations** tab → Add location.
+2. **Define location**: `/api`. Set scheme/forward hostname/forward port to the same values as the main proxy.
+3. Click the gear/settings icon on the row and paste:
 
-## Funding URL
+    ```nginx
+    add_header 'Access-Control-Allow-Origin' '*' always;
+    add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS' always;
+    add_header 'Access-Control-Allow-Headers' 'x-api-key, content-type, authorization' always;
+    add_header 'Access-Control-Expose-Headers' 'content-length, content-type' always;
 
-You can include funding URLs where people who use your plugin can financially support it.
-
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
-
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
-```
-
-If you have multiple URLs, you can also do:
-
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
+    if ($request_method = 'OPTIONS') {
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS' always;
+        add_header 'Access-Control-Allow-Headers' 'x-api-key, content-type, authorization' always;
+        add_header 'Access-Control-Max-Age' 1728000 always;
+        add_header 'Content-Type' 'text/plain; charset=UTF-8';
+        add_header 'Content-Length' 0;
+        return 204;
     }
-}
+    ```
+
+4. Save.
+
+A few nginx footguns this works around:
+
+-   The CORS headers must live in a **location-scope** custom config, not in the proxy host's "Advanced → Custom Nginx Configuration" field. Server-scope `if` blocks in NPM can shift SSL directives and cause `ERR_SSL_UNRECOGNIZED_NAME_ALERT`.
+-   The `add_header` directives outside the `if` apply to all proxied methods (POST, GET, etc.). They must be repeated _inside_ the `if ($request_method = 'OPTIONS')` block because nginx does not inherit `add_header` into `if` blocks that short-circuit with `return`.
+-   `always` is required so the headers attach to non-2xx responses (e.g., a 401 from Immich), otherwise auth failures look like CORS failures in the browser console.
+
+Verify with curl:
+
+```bash
+curl -i -X POST https://immich.example.com/api/search/metadata \
+  -H "Origin: app://obsidian.md" \
+  -H "x-api-key: <your-key>" \
+  -H "Content-Type: application/json" \
+  -d '{"size":1}' | grep -i 'access-control\|HTTP/'
 ```
 
-## API Documentation
+You should see `HTTP/2 200` and `access-control-allow-origin: *`.
 
-See https://docs.obsidian.md
+## Privacy
+
+-   Network calls go only to the Immich server you configure, using the API key you provide.
+-   The plugin does not send any vault contents, telemetry, or analytics anywhere.
+-   The hash → asset ID map and image cache live entirely in `<vault>/.obsidian/plugins/obsidian-immich-sync/`.
