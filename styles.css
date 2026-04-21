@@ -1,8 +1,9 @@
-/*
+.immich-sync-image img {
+	max-width: 100%;
+	height: auto;
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
-
-If your plugin does not need CSS, delete this file.
-
-*/
+.immich-sync-error {
+	color: var(--text-error);
+	font-style: italic;
+}
