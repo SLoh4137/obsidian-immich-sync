@@ -8,8 +8,9 @@ export function registerCodeblockProcessor(plugin: ImmichSyncPlugin): void {
 			.map((line) => line.trim())
 			.filter((line) => line.length > 0);
 
+		const grid = el.createDiv({ cls: "immich-sync-block" });
 		for (const hash of hashes) {
-			const container = el.createDiv({ cls: "immich-sync-image" });
+			const container = grid.createDiv({ cls: "immich-sync-image" });
 			void renderHash(plugin, container, hash);
 		}
 	});
