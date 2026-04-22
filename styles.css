@@ -17,9 +17,85 @@
 	height: auto;
 	display: block;
 	border-radius: 4px;
+	cursor: zoom-in;
 }
 
 .immich-sync-error {
 	color: var(--text-error);
 	font-style: italic;
+}
+
+.immich-sync-modal {
+	width: min(95vw, 1600px);
+	max-width: 95vw;
+	max-height: 95vh;
+	padding: 0;
+	background: transparent;
+	box-shadow: none;
+	border: none;
+}
+
+.immich-sync-modal .modal-close-button {
+	z-index: 1;
+}
+
+.immich-sync-modal .modal-content {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	margin: 0;
+	position: relative;
+	min-height: 50vh;
+}
+
+.immich-sync-modal-image {
+	max-width: 95vw;
+	max-height: 90vh;
+	width: auto;
+	height: auto;
+	display: block;
+	object-fit: contain;
+}
+
+.immich-sync-modal-nav {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	background: rgba(0, 0, 0, 0.5);
+	color: #fff;
+	border: none;
+	border-radius: 50%;
+	width: 44px;
+	height: 44px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	box-shadow: none;
+}
+
+.immich-sync-modal-nav:hover {
+	background: rgba(0, 0, 0, 0.75);
+}
+
+.immich-sync-modal-prev {
+	left: 12px;
+}
+
+.immich-sync-modal-next {
+	right: 12px;
+}
+
+.immich-sync-modal-counter {
+	position: absolute;
+	bottom: 12px;
+	left: 50%;
+	transform: translateX(-50%);
+	color: #fff;
+	background: rgba(0, 0, 0, 0.5);
+	padding: 4px 10px;
+	border-radius: 12px;
+	font-size: 12px;
+	pointer-events: none;
 }
