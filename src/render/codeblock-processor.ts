@@ -46,8 +46,9 @@ async function renderHash(
 }
 
 async function resolveImageSrc(plugin: ImmichSyncPlugin, hash: string): Promise<string | null> {
+	const fullRes = plugin.settings.fullResolution;
 	if (plugin.settings.enableLocalCache) {
-		const cachedPath = await plugin.cache.get(hash);
+		const cachedPath = await plugin.cache.get(hash, fullRes);
 		if (cachedPath !== null) {
 			return plugin.app.vault.adapter.getResourcePath(cachedPath);
 		}
@@ -58,13 +59,18 @@ async function resolveImageSrc(plugin: ImmichSyncPlugin, hash: string): Promise<
 		return null;
 	}
 
+	const buffer = await plugin.client.fetchAssetBytes(assetId, fullRes);
+
 	if (plugin.settings.enableLocalCache) {
-		const buffer = await plugin.client.fetchAssetBytes(assetId, plugin.settings.fullResolution);
-		const writtenPath = await plugin.cache.put(hash, buffer);
+		const writtenPath = await plugin.cache.put(hash, buffer, fullRes);
 		return plugin.app.vault.adapter.getResourcePath(writtenPath);
 	}
 
-	return plugin.client.directUrl(assetId, plugin.settings.fullResolution);
+	// Cache disabled: hand the bytes to the browser as a blob URL. The URL is
+	// not revoked — it lives until plugin reload — so the modal can still use
+	// it after the codeblock re-renders. Memory cost is bounded by image count
+	// per session.
+	return URL.createObjectURL(new Blob([buffer]));
 }
 
 async function resolveAssetId(plugin: ImmichSyncPlugin, hash: string): Promise<string | null> {

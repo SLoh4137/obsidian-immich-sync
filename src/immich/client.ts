@@ -1,11 +1,4 @@
-import {
-	AssetMediaSize,
-	getAssetOriginalPath,
-	getAssetThumbnailPath,
-	init,
-	searchAssets,
-	viewAsset,
-} from "@immich/sdk";
+import { AssetMediaSize, init, searchAssets, viewAsset } from "@immich/sdk";
 import ImmichSyncPlugin from "../main";
 
 export class ImmichClient {
@@ -32,18 +25,11 @@ export class ImmichClient {
 		const blob = await viewAsset({
 			id: assetId,
 			size: fullResolution
-				? AssetMediaSize.Original
+				? AssetMediaSize.Fullsize
 				: AssetMediaSize.Thumbnail,
 		});
-		return blob.arrayBuffer();
-	}
 
-	directUrl(assetId: string, fullResolution: boolean): string {
-		const path = fullResolution
-			? getAssetOriginalPath(assetId)
-			: getAssetThumbnailPath(assetId);
-		const apiKey = encodeURIComponent(this.plugin.settings.apiKey);
-		return `${this.baseUrl()}${path}?apiKey=${apiKey}`;
+		return blob.arrayBuffer();
 	}
 
 	private baseUrl(): string {

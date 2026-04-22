@@ -5,7 +5,7 @@ import { pickImages } from "./picker";
 
 export async function uploadImagesToImmich(
 	plugin: ImmichSyncPlugin,
-	editor: Editor,
+	editor: Editor
 ): Promise<void> {
 	const files = await pickImages();
 	if (files.length === 0) {
@@ -17,15 +17,21 @@ export async function uploadImagesToImmich(
 		const buffer = await file.arrayBuffer();
 		const hash = await sha1Base64(buffer);
 		hashes.push(hash);
-		if (plugin.settings.enableLocalCache) {
-			await plugin.cache.put(hash, buffer);
-		}
+
+		// Disabled for now until we can handle HEIC files
+		// if (plugin.settings.enableLocalCache) {
+		// 	await plugin.cache.put(hash, buffer, plugin.settings.fullResolution);
+		// }
 	}
 
 	const block = "```" + CODEBLOCK_LANG + "\n" + hashes.join("\n") + "\n```\n";
 	editor.replaceSelection(block);
 
-	new Notice(`Inserted ${hashes.length} Immich hash${hashes.length === 1 ? "" : "es"}`);
+	new Notice(
+		`Inserted ${hashes.length} Immich hash${
+			hashes.length === 1 ? "" : "es"
+		}`
+	);
 }
 
 async function sha1Base64(buffer: ArrayBuffer): Promise<string> {

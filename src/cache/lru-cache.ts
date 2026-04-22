@@ -3,6 +3,7 @@ import ImmichSyncPlugin from "../main";
 
 interface CacheEntry {
 	hash: string;
+	fullRes: boolean;
 	sizeBytes: number;
 	lastAccessMs: number;
 }
@@ -19,7 +20,12 @@ export class LruCache {
 	constructor(private plugin: ImmichSyncPlugin) {}
 
 	hydrate(data: SerializedCacheIndex | undefined): void {
-		this.entries = (data ?? []).slice().sort((a, b) => a.lastAccessMs - b.lastAccessMs);
+		// Drop legacy entries (pre-resolution-aware cache) — their files become
+		// orphans on disk and will be cleaned up by Clear cache.
+		this.entries = (data ?? [])
+			.filter((e) => typeof e.fullRes === "boolean")
+			.slice()
+			.sort((a, b) => a.lastAccessMs - b.lastAccessMs);
 		this.dirEnsured = false;
 	}
 
@@ -27,14 +33,15 @@ export class LruCache {
 		return this.entries.slice();
 	}
 
-	async get(hash: string): Promise<string | null> {
-		const idx = this.entries.findIndex((e) => e.hash === hash);
+	async get(hash: string, fullRes: boolean): Promise<string | null> {
+		const idx = this.entries.findIndex(
+			(e) => e.hash === hash && e.fullRes === fullRes,
+		);
 		if (idx === -1) {
 			return null;
 		}
-		const path = this.filePath(hash);
+		const path = this.filePath(hash, fullRes);
 		if (!(await this.plugin.app.vault.adapter.exists(path))) {
-			// File missing on disk — drop the stale index entry.
 			this.entries.splice(idx, 1);
 			this.plugin.schedulePersist();
 			return null;
@@ -46,17 +53,24 @@ export class LruCache {
 		return path;
 	}
 
-	async put(hash: string, buffer: ArrayBuffer): Promise<string> {
+	async put(
+		hash: string,
+		buffer: ArrayBuffer,
+		fullRes: boolean
+	): Promise<string> {
 		await this.ensureDir();
-		const path = this.filePath(hash);
+		const path = this.filePath(hash, fullRes);
 		await this.plugin.app.vault.adapter.writeBinary(path, buffer);
 
-		const existingIdx = this.entries.findIndex((e) => e.hash === hash);
+		const existingIdx = this.entries.findIndex(
+			(e) => e.hash === hash && e.fullRes === fullRes
+		);
 		if (existingIdx !== -1) {
 			this.entries.splice(existingIdx, 1);
 		}
 		this.entries.push({
 			hash,
+			fullRes,
 			sizeBytes: buffer.byteLength,
 			lastAccessMs: Date.now(),
 		});
@@ -70,7 +84,7 @@ export class LruCache {
 		const adapter = this.plugin.app.vault.adapter;
 		for (const entry of this.entries) {
 			try {
-				await adapter.remove(this.filePath(entry.hash));
+				await adapter.remove(this.filePath(entry.hash, entry.fullRes));
 			} catch {
 				// Ignore — file may already be gone.
 			}
@@ -87,20 +101,25 @@ export class LruCache {
 			const oldest = this.entries.shift()!;
 			total -= oldest.sizeBytes;
 			try {
-				await adapter.remove(this.filePath(oldest.hash));
+				await adapter.remove(
+					this.filePath(oldest.hash, oldest.fullRes)
+				);
 			} catch {
 				// Ignore — file may already be gone.
 			}
 		}
 	}
 
-	private filePath(hash: string): string {
-		return normalizePath(`${this.cacheDir()}/${hashToFilename(hash)}`);
+	private filePath(hash: string, fullRes: boolean): string {
+		const suffix = fullRes ? "fullsize" : "thumb";
+		return normalizePath(
+			`${this.cacheDir()}/${hashToFilename(hash)}-${suffix}`
+		);
 	}
 
 	private cacheDir(): string {
 		return normalizePath(
-			`${this.plugin.app.vault.configDir}/plugins/${this.plugin.manifest.id}/cache`,
+			`${this.plugin.app.vault.configDir}/plugins/${this.plugin.manifest.id}/cache`
 		);
 	}
 

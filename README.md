@@ -30,7 +30,7 @@ This plugin is not yet on the community catalog. To install manually:
 
 -   **Immich server URL** — must include `/api` (e.g. `https://immich.example.com/api`).
 -   **Immich API key** — stored in this plugin's `data.json` on disk in plain text. Needs `asset.read`, `asset.download`, and `asset.view` permissions.
--   **Cache images locally** — keep fetched images on disk so notes render offline. Cached files live at `<vault>/.obsidian/plugins/obsidian-immich-sync/cache/`. Default: on. **Recommended to leave on** — see the API key exposure note below.
+-   **Cache images locally** — keep fetched images on disk so notes render offline. Cached files live at `<vault>/.obsidian/plugins/obsidian-immich-sync/cache/`. Default: on. With caching off, every render fetches from Immich and renders via an in-memory blob URL (held until plugin reload).
 -   **Full resolution** — fetch originals instead of thumbnails. Uses much more bandwidth and disk. Default: off.
 -   **Max cache size (MB)** — oldest accessed images are evicted when this is exceeded. Default: 50.
 -   **Clear cache** — deletes all cached files. The hash → asset ID map is preserved so you don't have to re-search Immich.
@@ -92,23 +92,9 @@ curl -i -X POST https://immich.example.com/api/search/metadata \
 
 You should see `HTTP/2 200` and `access-control-allow-origin: *`.
 
-## Security: API key exposure when local cache is disabled
+## Recommended: use a scoped Immich API key
 
-When **Cache images locally** is **on** (the default), image bytes are fetched via the Immich SDK using the `x-api-key` HTTP header. The rendered `<img src>` then points at a local `app://` resource path, and your API key never touches the DOM.
-
-When **Cache images locally** is **off**, the plugin renders each image with a direct URL that embeds the API key as a query string:
-
-```
-https://immich.example.com/api/assets/<id>/thumbnail?apiKey=<your-key>
-```
-
-That string is now reachable from anything with access to:
-
--   the Obsidian DOM (DevTools Elements/Network tabs, browser extensions, screen-sharing tools);
--   the reverse proxy's access logs (NPM logs query strings by default);
--   anyone you screenshot or screen-record the rendered note for.
-
-If you must run with caching off, or generally as good practice, generate a **dedicated, scoped API key** for this plugin in Immich rather than reusing your main key:
+The plugin authenticates every Immich call with the `x-api-key` HTTP header. Your API key never appears in the DOM, in `<img>` URLs, or in your reverse proxy's query-string logs. Even so, the key sits in `data.json` on disk in plain text. To limit the blast radius if the file is ever exposed, generate a dedicated key for this plugin rather than reusing your main one:
 
 1. Immich web UI → **Account Settings → API Keys → New API Key**.
 2. Grant only the permissions the plugin needs:
@@ -117,7 +103,7 @@ If you must run with caching off, or generally as good practice, generate a **de
     - `asset.download` (only required if you use full resolution)
 3. Copy the key into **Settings → Immich Sync → Immich API key**.
 
-A scoped, read-only key limits the blast radius if the key ever leaks: the worst an attacker can do is read assets you've already shared the checksums of.
+A scoped, read-only key means the worst an attacker can do with the leaked key is read assets you've already embedded the checksums of.
 
 ## Privacy
 
