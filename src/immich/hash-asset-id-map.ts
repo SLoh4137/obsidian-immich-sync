@@ -23,8 +23,8 @@ export class HashAssetIdMap {
 		return this.map.has(hash);
 	}
 
-	async set(hash: string, assetId: string): Promise<void> {
+	set(hash: string, assetId: string): void {
 		this.map.set(hash, assetId);
-		await this.plugin.savePluginData();
+		this.plugin.schedulePersist();
 	}
 }

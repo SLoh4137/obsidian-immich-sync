@@ -36,13 +36,13 @@ export class LruCache {
 		if (!(await this.plugin.app.vault.adapter.exists(path))) {
 			// File missing on disk — drop the stale index entry.
 			this.entries.splice(idx, 1);
-			await this.plugin.savePluginData();
+			this.plugin.schedulePersist();
 			return null;
 		}
 		const entry = this.entries.splice(idx, 1)[0]!;
 		entry.lastAccessMs = Date.now();
 		this.entries.push(entry);
-		await this.plugin.savePluginData();
+		this.plugin.schedulePersist();
 		return path;
 	}
 
@@ -62,7 +62,7 @@ export class LruCache {
 		});
 
 		await this.evictIfNeeded();
-		await this.plugin.savePluginData();
+		this.plugin.schedulePersist();
 		return path;
 	}
 
@@ -76,7 +76,7 @@ export class LruCache {
 			}
 		}
 		this.entries = [];
-		await this.plugin.savePluginData();
+		this.plugin.schedulePersist();
 	}
 
 	private async evictIfNeeded(): Promise<void> {

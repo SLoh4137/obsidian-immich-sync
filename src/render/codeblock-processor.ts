@@ -60,7 +60,7 @@ async function resolveAssetId(plugin: ImmichSyncPlugin, hash: string): Promise<s
 	}
 	const assetId = await plugin.client.lookupAssetIdByHash(hash);
 	if (assetId !== null) {
-		await plugin.hashMap.set(hash, assetId);
+		plugin.hashMap.set(hash, assetId);
 	}
 	return assetId;
 }

@@ -1,4 +1,4 @@
-import { Plugin } from "obsidian";
+import { Debouncer, Plugin, debounce } from "obsidian";
 import {
 	DEFAULT_SETTINGS,
 	ImmichSyncSettings,
@@ -19,11 +19,18 @@ interface PersistedPluginData {
 	cacheIndex: SerializedCacheIndex;
 }
 
+const PERSIST_DEBOUNCE_MS = 250;
+
 export default class ImmichSyncPlugin extends Plugin {
 	settings: ImmichSyncSettings;
 	hashMap: HashAssetIdMap = new HashAssetIdMap(this);
 	cache: LruCache = new LruCache(this);
 	client: ImmichClient = new ImmichClient(this);
+
+	private debouncedPersist: Debouncer<[], Promise<void>> = debounce(
+		() => this.savePluginData(),
+		PERSIST_DEBOUNCE_MS,
+	);
 
 	async onload() {
 		await this.loadSettings();
@@ -31,6 +38,16 @@ export default class ImmichSyncPlugin extends Plugin {
 		registerUploadEntryPoints(this);
 		registerCodeblockProcessor(this);
 		this.addSettingTab(new ImmichSyncSettingTab(this.app, this));
+	}
+
+	onunload() {
+		// Flush any debounced writes. Plugin.onunload is sync, so this is
+		// best-effort — the save kicks off but won't block teardown.
+		void this.debouncedPersist.run();
+	}
+
+	schedulePersist(): void {
+		this.debouncedPersist();
 	}
 
 	async clearCache(): Promise<void> {
