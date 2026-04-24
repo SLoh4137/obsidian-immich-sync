@@ -1,7 +1,7 @@
 {
 	"id": "obsidian-immich-sync",
 	"name": "Immich Sync",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"minAppVersion": "1.8.7",
 	"description": "Replaces image embeds with Immich checksums and renders them at view time by fetching from your Immich server, with optional local LRU caching.",
 	"isDesktopOnly": false
