@@ -35,6 +35,18 @@ This plugin is not yet on the community catalog. To install manually:
 -   **Max cache size (MB)** — oldest accessed images are evicted when this is exceeded. Default: 50.
 -   **Clear cache** — deletes all cached files. The hash → asset ID map is preserved so you don't have to re-search Immich.
 
+## HEIC and other non-web image formats
+
+Browsers (and Obsidian's Chromium) can't natively render HEIC, HEIF, or RAW files. To make those embeds work, Immich must transcode them to a web-friendly format on the server side. The plugin requests the **`fullsize`** image variant when **Full resolution** is on, which Immich only serves if full-size generation is enabled.
+
+In your Immich admin UI:
+
+1. **Administration → System Settings → Image**.
+2. Enable **Generate full-size images** (sometimes labeled "Full-size image generation").
+3. Re-run **Job Status → Generate Thumbnails → All** so existing assets are processed.
+
+Without this, HEIC/RAW assets will render as broken images and you'll see a `404` (or a 500 from the transcoding pipeline) for `/api/assets/<id>/fullsize` in the console. JPEG/PNG/WebP work without this setting because the original or thumbnail formats are already web-compatible.
+
 ## Uploading images
 
 Three entry points, all open the OS file picker (multi-select):
