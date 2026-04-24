@@ -47,6 +47,19 @@ In your Immich admin UI:
 
 Without this, HEIC/RAW assets will render as broken images and you'll see a `404` (or a 500 from the transcoding pipeline) for `/api/assets/<id>/fullsize` in the console. JPEG/PNG/WebP work without this setting because the original or thumbnail formats are already web-compatible.
 
+### Client-side HEIC → JPEG on upload
+
+When **Cache images locally** is on, the plugin also detects HEIC files at upload time (by checking ISOBMFF magic bytes for `ftyp` + a HEIC brand) and transcodes them to JPEG before writing to the cache. This is so the very first render of a freshly-uploaded HEIC is instant — without it, the cache would hold unrenderable HEIC bytes and the first render would have to wait for an Immich fetch.
+
+The conversion uses the [`heic-convert`](https://www.npmjs.com/package/heic-convert) package (with `heic-convert/browser` so encoding goes through Canvas, not Node's `jpeg-js`). The dependency tree pulls in `libheif-js`, whose WASM is base64-inlined into `main.js` — currently that adds about **1.4 MB** to the plugin bundle.
+
+**When to remove this:**
+
+-   **Chromium gains native HEIC decoding.** If a future Electron release that Obsidian ships with can render HEIC in `<img>` tags directly, the conversion is dead weight — the cached HEIC bytes would render fine, and the bundle can shrink back to ~28 KB. Check `data:image/heic;base64,…` support in the DevTools console.
+-   **You'd rather take the network hit.** The plugin still works correctly without the conversion — uploads simply skip the cache.put for HEIC files, and the first render fetches the transcoded fullsize from Immich (which is already required for HEIC anyway, per the section above). To switch to that mode, drop the `isHeic`/`convertHeicToJpeg` calls in `src/upload/upload-command.ts` and `npm uninstall heic-convert`.
+
+The hash inserted into the codeblock is always the SHA-1 of the **original** HEIC bytes (not the JPEG), so removing the conversion later doesn't invalidate any existing notes — Immich's `searchAssets` lookup still resolves the same way.
+
 ## Uploading images
 
 Three entry points, all open the OS file picker (multi-select):

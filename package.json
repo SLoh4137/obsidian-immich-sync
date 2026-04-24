@@ -25,6 +25,7 @@
 	},
 	"dependencies": {
 		"@immich/sdk": "^2.7.5",
+		"heic-convert": "^2.1.0",
 		"obsidian": "latest"
 	}
 }

@@ -1,6 +1,7 @@
 import { Editor, Notice, arrayBufferToBase64 } from "obsidian";
 import ImmichSyncPlugin from "../main";
 import { CODEBLOCK_LANG } from "../types";
+import { convertHeicToJpeg, isHeic } from "./heic";
 import { pickImages } from "./picker";
 
 export async function uploadImagesToImmich(
@@ -18,10 +19,15 @@ export async function uploadImagesToImmich(
 		const hash = await sha1Base64(buffer);
 		hashes.push(hash);
 
-		// Disabled for now until we can handle HEIC files
-		// if (plugin.settings.enableLocalCache) {
-		// 	await plugin.cache.put(hash, buffer, plugin.settings.fullResolution);
-		// }
+		if (plugin.settings.enableLocalCache) {
+			// Browsers can't render HEIC; transcode to JPEG before caching.
+			// The hash stays as SHA-1 of the original — that's what matches
+			// Immich's checksum on lookup.
+			const cacheBytes = isHeic(buffer)
+				? await convertHeicToJpeg(buffer)
+				: buffer;
+			await plugin.cache.put(hash, cacheBytes, plugin.settings.fullResolution);
+		}
 	}
 
 	const block = "```" + CODEBLOCK_LANG + "\n" + hashes.join("\n") + "\n```\n";
