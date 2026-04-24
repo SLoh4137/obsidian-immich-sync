@@ -1,5 +1,9 @@
 // heic-convert ships no published types — declare a minimal shape and cast.
-type ConvertOptions = { buffer: Uint8Array; format: "JPEG" | "PNG"; quality?: number };
+type ConvertOptions = {
+	buffer: Uint8Array;
+	format: "JPEG" | "PNG";
+	quality?: number;
+};
 type Convert = (opts: ConvertOptions) => Promise<Uint8Array>;
 // @ts-expect-error — no types
 import convertImpl from "heic-convert/browser";
@@ -33,7 +37,9 @@ export function isHeic(buffer: ArrayBuffer): boolean {
 	return HEIC_BRANDS.has(brand);
 }
 
-export async function convertHeicToJpeg(buffer: ArrayBuffer): Promise<ArrayBuffer> {
+export async function convertHeicToJpeg(
+	buffer: ArrayBuffer
+): Promise<ArrayBuffer> {
 	const result = await convert({
 		buffer: new Uint8Array(buffer),
 		format: "JPEG",
