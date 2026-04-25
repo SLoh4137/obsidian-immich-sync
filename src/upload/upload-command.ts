@@ -20,12 +20,13 @@ export async function uploadImagesToImmich(
 		hashes.push(hash);
 
 		if (plugin.settings.enableLocalCache) {
-			// Browsers can't render HEIC; transcode to JPEG before caching.
-			// The hash stays as SHA-1 of the original — that's what matches
-			// Immich's checksum on lookup.
-			const cacheBytes = isHeic(buffer)
-				? await convertHeicToJpeg(buffer)
-				: buffer;
+			// Transcode HEIC → JPEG only if the user opted in. Otherwise
+			// store the original bytes (the hash stays SHA-1 of the original
+			// either way, so Immich's checksum lookup still resolves).
+			const cacheBytes =
+				plugin.settings.convertHeicOnUpload && isHeic(buffer)
+					? await convertHeicToJpeg(buffer)
+					: buffer;
 			await plugin.cache.put(
 				hash,
 				cacheBytes,

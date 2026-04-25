@@ -28,8 +28,8 @@ export default tseslint.config(
 			"obsidianmd/ui/sentence-case": [
 				"error",
 				{
-					brands: ["Immich"],
-					acronyms: ["MB", "URL", "API"],
+					brands: ["Immich", "Chromium"],
+					acronyms: ["MB", "URL", "API", "HEIC", "JPEG", "CPU"],
 				},
 			],
 		},

@@ -7,6 +7,7 @@ export interface ImmichSyncSettings {
 	enableLocalCache: boolean;
 	fullResolution: boolean;
 	maxCacheSizeMb: number;
+	convertHeicOnUpload: boolean;
 }
 
 export const DEFAULT_SETTINGS: ImmichSyncSettings = {
@@ -15,6 +16,7 @@ export const DEFAULT_SETTINGS: ImmichSyncSettings = {
 	enableLocalCache: true,
 	fullResolution: false,
 	maxCacheSizeMb: 50,
+	convertHeicOnUpload: true,
 };
 
 export class ImmichSyncSettingTab extends PluginSettingTab {
@@ -85,6 +87,20 @@ export class ImmichSyncSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.fullResolution)
 					.onChange(async (value) => {
 						this.plugin.settings.fullResolution = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Convert HEIC to JPEG on upload")
+			.setDesc(
+				"When caching is on, transcode HEIC uploads to JPEG so the first render is instant. Turn off to cache the raw HEIC bytes instead — saves CPU on upload, but the cached file won't render in Chromium until refetched."
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.convertHeicOnUpload)
+					.onChange(async (value) => {
+						this.plugin.settings.convertHeicOnUpload = value;
 						await this.plugin.saveSettings();
 					})
 			);
