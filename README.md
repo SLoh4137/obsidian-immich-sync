@@ -11,8 +11,9 @@ Keep your vault tiny. This plugin replaces image embeds with the Immich checksum
     <hash2>
     ```
     ````
-    No image bytes go into the vault. The plugin assumes you've also uploaded the same images to Immich (e.g., via the mobile auto-backup); rendering will look them up by checksum.
--   **Render**: when an `immich-sync` codeblock is shown, each hash is resolved to an Immich asset ID (cached in `data.json` after first lookup) and either pulled from disk cache or fetched from Immich. Cache misses populate the cache for next time.
+    No image bytes go into the vault. The plugin assumes you've also uploaded the same images to Immich (e.g., via the mobile auto-backup); rendering will look them up by checksum. If your cursor is already inside an `immich-sync` codeblock, new hashes are appended to it instead of opening a new block.
+-   **Render**: when an `immich-sync` codeblock is shown, each hash is resolved to an Immich asset ID (cached in `data.json` after first lookup) and either pulled from disk cache or fetched from Immich. Cache misses populate the cache for next time. Images render in a grid, and clicking one opens a fullscreen viewer with prev/next arrows, arrow-key shortcuts, and horizontal swipe-to-navigate.
+-   **Banner**: a note's frontmatter can carry an `immichImages` array of hashes; the plugin renders them as a banner pinned to the top of the note in both reading and edit modes. Clicking the banner opens the same fullscreen viewer over all banner images.
 
 ## Installation
 
@@ -32,6 +33,7 @@ This plugin is not yet on the community catalog. To install manually:
 -   **Immich API key** — stored in this plugin's `data.json` on disk in plain text. Needs `asset.read`, `asset.download`, and `asset.view` permissions.
 -   **Cache images locally** — keep fetched images on disk so notes render offline. Cached files live at `<vault>/.obsidian/plugins/obsidian-immich-sync/cache/`. Default: on. With caching off, every render fetches from Immich and renders via an in-memory blob URL (held until plugin reload).
 -   **Full resolution** — fetch originals instead of thumbnails. Uses much more bandwidth and disk. Default: off.
+-   **Convert HEIC to JPEG on upload** — when caching is on, transcode HEIC uploads to JPEG so the very first render is instant. Turn off to skip the transcoding cost on upload at the price of refetching from Immich the first time. Default: on. See the HEIC section below for the full tradeoff.
 -   **Max cache size (MB)** — oldest accessed images are evicted when this is exceeded. Default: 50.
 -   **Clear cache** — deletes all cached files. The hash → asset ID map is preserved so you don't have to re-search Immich.
 
@@ -49,26 +51,48 @@ Without this, HEIC/RAW assets will render as broken images and you'll see a `404
 
 ### Client-side HEIC → JPEG on upload
 
-When **Cache images locally** is on, the plugin also detects HEIC files at upload time (by checking ISOBMFF magic bytes for `ftyp` + a HEIC brand) and transcodes them to JPEG before writing to the cache. This is so the very first render of a freshly-uploaded HEIC is instant — without it, the cache would hold unrenderable HEIC bytes and the first render would have to wait for an Immich fetch.
+When **Cache images locally** and **Convert HEIC to JPEG on upload** are both on, the plugin detects HEIC files at upload time (by checking ISOBMFF magic bytes for `ftyp` + a HEIC brand) and transcodes them to JPEG before writing to the cache. This is so the very first render of a freshly-uploaded HEIC is instant — without it, the cache would hold unrenderable HEIC bytes and the first render would have to wait for an Immich fetch.
 
 The conversion uses the [`heic-convert`](https://www.npmjs.com/package/heic-convert) package (with `heic-convert/browser` so encoding goes through Canvas, not Node's `jpeg-js`). The dependency tree pulls in `libheif-js`, whose WASM is base64-inlined into `main.js` — currently that adds about **1.4 MB** to the plugin bundle.
 
-**When to remove this:**
+**When to disable it (via the setting):**
 
--   **Chromium gains native HEIC decoding.** If a future Electron release that Obsidian ships with can render HEIC in `<img>` tags directly, the conversion is dead weight — the cached HEIC bytes would render fine, and the bundle can shrink back to ~28 KB. Check `data:image/heic;base64,…` support in the DevTools console.
--   **You'd rather take the network hit.** The plugin still works correctly without the conversion — uploads simply skip the cache.put for HEIC files, and the first render fetches the transcoded fullsize from Immich (which is already required for HEIC anyway, per the section above). To switch to that mode, drop the `isHeic`/`convertHeicToJpeg` calls in `src/upload/upload-command.ts` and `npm uninstall heic-convert`.
+-   **You'd rather take the network hit.** With the toggle off, uploads still complete and the hash still gets written to the note — the first render just refetches the transcoded fullsize from Immich (which is already required for HEIC anyway, per the section above). Subsequent renders hit the cache normally.
+-   **Chromium gains native HEIC decoding.** If a future Electron release that Obsidian ships with can render HEIC in `<img>` tags directly, the conversion is dead weight — the cached HEIC bytes would render fine. At that point the dependency can also be dropped from the build to shrink the bundle back to ~28 KB. Check `data:image/heic;base64,…` support in the DevTools console.
 
-The hash inserted into the codeblock is always the SHA-1 of the **original** HEIC bytes (not the JPEG), so removing the conversion later doesn't invalidate any existing notes — Immich's `searchAssets` lookup still resolves the same way.
+The hash inserted into the codeblock is always the SHA-1 of the **original** HEIC bytes (not the JPEG), so toggling this setting later doesn't invalidate any existing notes — Immich's `searchAssets` lookup still resolves the same way.
 
 ## Uploading images
 
 Three entry points, all open the OS file picker (multi-select):
 
--   Right-click in the editor → **Upload images to Immich**
+-   Right-click in the editor → **Add images to note**
 -   Command palette → **Upload images to Immich**
 -   Ribbon icon (image-up icon)
 
-The ribbon and command-palette flows insert into the currently-active note.
+All three insert an `immich-sync` codeblock into the currently-active note. If the cursor is already inside one, new hashes are appended to it instead.
+
+## Banner images
+
+A note can declare banner images in its frontmatter under the `immichImages` key:
+
+```yaml
+---
+immichImages:
+    - <hash1>
+    - <hash2>
+---
+```
+
+The first hash renders as a full-width banner pinned to the top of the note (in both reading and edit modes), with the remaining images available by clicking the banner to open the fullscreen viewer.
+
+To manage banners without editing YAML by hand, use any of:
+
+-   Right-click in the editor → **Edit banner images**
+-   Command palette → **Edit Immich banner images**
+-   Ribbon icon (panel-top icon)
+
+The editor opens a modal showing the current banner images. **Add images** opens the OS file picker and appends new hashes; the **×** on each thumbnail removes that image from the frontmatter (the asset stays in Immich).
 
 ## CORS configuration (Nginx Proxy Manager)
 
