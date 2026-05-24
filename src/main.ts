@@ -12,6 +12,7 @@ import { ImmichClient } from "./immich/client";
 import { LruCache, SerializedCacheIndex } from "./cache/lru-cache";
 import { registerUploadEntryPoints } from "./upload/register";
 import { registerCodeblockProcessor } from "./render/codeblock-processor";
+import { registerBannerRenderer } from "./render/banner";
 
 interface PersistedPluginData {
 	settings: ImmichSyncSettings;
@@ -37,6 +38,7 @@ export default class ImmichSyncPlugin extends Plugin {
 		this.client.reinit();
 		registerUploadEntryPoints(this);
 		registerCodeblockProcessor(this);
+		registerBannerRenderer(this);
 		this.addSettingTab(new ImmichSyncSettingTab(this.app, this));
 	}
 
