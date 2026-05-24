@@ -1,38 +1,15 @@
-import { Editor, Notice, arrayBufferToBase64 } from "obsidian";
+import { Editor, Notice } from "obsidian";
 import ImmichSyncPlugin from "../main";
 import { CODEBLOCK_LANG } from "../types";
-import { convertHeicToJpeg, isHeic } from "./heic";
-import { pickImages } from "./picker";
+import { pickAndCacheImages } from "./pick-and-cache";
 
-export async function uploadImagesToImmich(
+export async function addImagesToImmichBlock(
 	plugin: ImmichSyncPlugin,
 	editor: Editor
 ): Promise<void> {
-	const files = await pickImages();
-	if (files.length === 0) {
+	const hashes = await pickAndCacheImages(plugin);
+	if (hashes.length === 0) {
 		return;
-	}
-
-	const hashes: string[] = [];
-	for (const file of files) {
-		const buffer = await file.arrayBuffer();
-		const hash = await sha1Base64(buffer);
-		hashes.push(hash);
-
-		if (plugin.settings.enableLocalCache) {
-			// Transcode HEIC → JPEG only if the user opted in. Otherwise
-			// store the original bytes (the hash stays SHA-1 of the original
-			// either way, so Immich's checksum lookup still resolves).
-			const cacheBytes =
-				plugin.settings.convertHeicOnUpload && isHeic(buffer)
-					? await convertHeicToJpeg(buffer)
-					: buffer;
-			await plugin.cache.put(
-				hash,
-				cacheBytes,
-				plugin.settings.fullResolution
-			);
-		}
 	}
 
 	const enclosing = findEnclosingImmichBlock(editor);
@@ -53,11 +30,6 @@ export async function uploadImagesToImmich(
 			hashes.length === 1 ? "" : "es"
 		}`
 	);
-}
-
-async function sha1Base64(buffer: ArrayBuffer): Promise<string> {
-	const digest = await crypto.subtle.digest("SHA-1", buffer);
-	return arrayBufferToBase64(digest);
 }
 
 // Returns the line index of the closing ``` if the cursor is currently inside

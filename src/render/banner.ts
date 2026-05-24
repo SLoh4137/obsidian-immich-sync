@@ -3,7 +3,7 @@ import ImmichSyncPlugin from "../main";
 import { ImageModal, ModalImage } from "./image-modal";
 import { resolveImageSrc } from "./image-source";
 
-const FRONTMATTER_KEY = "immichImages";
+export const FRONTMATTER_KEY = "immichImages";
 const BANNER_CLASS = "immich-sync-banner";
 const READING_HOST_SELECTOR = ".markdown-preview-sizer";
 const EDITOR_HOST_SELECTOR = ".cm-sizer";
@@ -189,7 +189,7 @@ function removeBannersExcept(view: MarkdownView, keepHost: HTMLElement): void {
 	});
 }
 
-function extractHashes(value: unknown): string[] {
+export function extractHashes(value: unknown): string[] {
 	if (Array.isArray(value)) {
 		return value
 			.filter((v): v is string => typeof v === "string")
