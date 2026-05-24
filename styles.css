@@ -30,13 +30,20 @@
 	max-width: 95vw;
 	max-height: 95vh;
 	padding: 0;
-	background: transparent;
+	background: #000;
 	box-shadow: none;
 	border: none;
 }
 
 .immich-sync-modal .modal-close-button {
 	z-index: 1;
+	width: 5rem;
+	height: 5rem;
+}
+
+.immich-sync-modal .modal-close-button svg {
+	width: 2.5rem;
+	height: 2.5rem;
 }
 
 .immich-sync-modal .modal-content {
@@ -47,6 +54,8 @@
 	margin: 0;
 	position: relative;
 	min-height: 50vh;
+	border-radius: 6px;
+	touch-action: none;
 }
 
 .immich-sync-modal-image {
@@ -93,7 +102,7 @@
 	left: 50%;
 	transform: translateX(-50%);
 	color: #fff;
-	background: rgba(0, 0, 0, 0.5);
+	background: rgba(0, 0, 0);
 	padding: 4px 10px;
 	border-radius: 12px;
 	font-size: 12px;
