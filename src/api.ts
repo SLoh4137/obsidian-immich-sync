@@ -1,6 +1,7 @@
 import { gps } from "exifr";
 import { FileSystemAdapter } from "obsidian";
 import ImmichSyncPlugin from "./main";
+import { resolveImageSrc } from "./render/image-source";
 
 export interface LatLng {
 	latitude: number;
@@ -9,6 +10,10 @@ export interface LatLng {
 
 export class ImmichSyncApi {
 	constructor(private plugin: ImmichSyncPlugin) {}
+
+	async resolveImageSrc(hash: string): Promise<string | null> {
+		return resolveImageSrc(this.plugin, hash);
+	}
 
 	async getLatLng(hash: string): Promise<LatLng | null> {
 		const fromCache = await this.readLatLngFromCachedImage(hash);
