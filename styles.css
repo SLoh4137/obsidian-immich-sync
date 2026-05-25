@@ -26,9 +26,14 @@
 }
 
 .immich-sync-modal {
-	width: min(95vw, 1600px);
-	max-width: 95vw;
-	max-height: 95vh;
+	width: 100vw;
+	height: 100vh;
+	max-width: 100vw;
+	max-height: 100vh;
+	top: 0;
+	left: 0;
+	transform: none;
+	border-radius: 0;
 	padding: 0;
 	background: #000;
 	box-shadow: none;
@@ -53,14 +58,15 @@
 	padding: 0;
 	margin: 0;
 	position: relative;
-	min-height: 50vh;
-	border-radius: 6px;
+	width: 100vw;
+	height: 100vh;
+	border-radius: 0;
 	touch-action: none;
 }
 
 .immich-sync-modal-image {
-	max-width: 95vw;
-	max-height: 90vh;
+	max-width: 100vw;
+	max-height: 100vh;
 	width: auto;
 	height: auto;
 	display: block;
