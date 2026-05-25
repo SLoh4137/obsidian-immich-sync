@@ -13,6 +13,7 @@ import { LruCache, SerializedCacheIndex } from "./cache/lru-cache";
 import { registerUploadEntryPoints } from "./upload/register";
 import { registerCodeblockProcessor } from "./render/codeblock-processor";
 import { registerBannerRenderer } from "./render/banner";
+import { ImmichSyncApi } from "./api";
 
 interface PersistedPluginData {
 	settings: ImmichSyncSettings;
@@ -27,6 +28,7 @@ export default class ImmichSyncPlugin extends Plugin {
 	hashMap: HashAssetIdMap = new HashAssetIdMap(this);
 	cache: LruCache = new LruCache(this);
 	client: ImmichClient = new ImmichClient(this);
+	api: ImmichSyncApi = new ImmichSyncApi(this);
 
 	private debouncedPersist: Debouncer<[], Promise<void>> = debounce(
 		() => this.savePluginData(),
